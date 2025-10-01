@@ -69,7 +69,7 @@ export async function onRequest(context) {
     if (!url) return Response.json({ message: 'Missing required parameter: url.' });
 
     // url格式检查
-    if (!/^https?:\/\/.{3,}/.test(url)) {
+    if (!env.DISABLE_URL_CHECK && !/^https?:\/\/.{3,}/.test(url)) {
         return Response.json({ message: 'Illegal format: url.' },{
             headers: corsHeaders,
             status: 400
@@ -77,7 +77,7 @@ export async function onRequest(context) {
     }
 
     // 自定义slug长度检查 2<slug<10 是否不以文件后缀结尾
-    if (slug && (slug.length < 2 || slug.length > 10 || /.+\.[a-zA-Z]+$/.test(slug))) {
+    if (!env.DISABLE_SLUG_CHECK && slug && (slug.length < 2 || slug.length > 10 || /.+\.[a-zA-Z]+$/.test(slug))) {
         return Response.json({ message: 'Illegal length: slug, (>= 2 && <= 10), or not ending with a file extension.' },{
             headers: corsHeaders,
             status: 400
@@ -96,7 +96,7 @@ export async function onRequest(context) {
 
             // url & slug 是一样的。
             if (existUrl && existUrl.existUrl === url) {
-                return Response.json({ slug, link: `${origin}/${slug2}` },{
+                return Response.json({ slug, link: `${origin}/${slug}` },{
                     headers: corsHeaders,
                     status: 200
                 })
@@ -104,6 +104,14 @@ export async function onRequest(context) {
 
             // slug 已存在
             if (existUrl) {
+                // 如果允许覆写，则更新现有记录
+                if (env.ALLOW_OVERWRITE) {
+                    await env.DB.prepare(`UPDATE links SET url = '${url}', ip = '${clientIP}', ua = '${userAgent}', create_time = '${formattedDate}' WHERE slug = '${slug}'`).run()
+                    return Response.json({ slug, link: `${origin}/${slug}` },{
+                        headers: corsHeaders,
+                        status: 200
+                    })
+                }
                 return Response.json({ message: 'Slug already exists.' },{
                     headers: corsHeaders,
                     status: 200  
@@ -124,7 +132,7 @@ export async function onRequest(context) {
         }
         const bodyUrl = new URL(url);
 
-        if (bodyUrl.hostname === originurl.hostname) {
+        if (!env.DISABLE_URL_CHECK && bodyUrl.hostname === originurl.hostname) {
             return Response.json({ message: 'You cannot shorten a link to the same domain.' }, {
                 headers: corsHeaders,
                 status: 400

@@ -54,7 +54,12 @@ CREATE TABLE IF NOT EXISTS logs (
    - 值：设置你的访问令牌（例如：`your-secret-token-here`）
    - 如果设置了此环境变量，所有创建短链接的请求都需要在 Authorization 头中提供该令牌
 
-10. 重新部署项目，完成。
+10. （可选）其他可配置的环境变量：
+   - `DISABLE_URL_CHECK`：设置为任意值（如 `true`）可禁用 URL 格式检查和同域检查
+   - `DISABLE_SLUG_CHECK`：设置为任意值（如 `true`）可禁用 slug 长度和格式检查
+   - `ALLOW_OVERWRITE`：设置为任意值（如 `true`）可允许覆盖已存在的 slug
+
+11. 重新部署项目，完成。
 
 
 ### API
