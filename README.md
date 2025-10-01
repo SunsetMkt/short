@@ -63,6 +63,12 @@ curl -X POST -H "Content-Type: application/json" -d '{"url":"https://131213.xyz"
 # 指定slug
 curl -X POST -H "Content-Type: application/json" -d '{"url":"https://131213.xyz","slug":"scxs"}' https://d.131213.xyz/create
 
+# 使用访问令牌（如果设置了 ACCESS_TOKEN 环境变量）
+curl -X POST -H "Content-Type: application/json" -d '{"url":"https://131213.xyz","token":"your-access-token"}' https://d.131213.xyz/create
+
+# 支持非 HTTP/HTTPS 的 URI（如 mailto:、tel: 等）
+curl -X POST -H "Content-Type: application/json" -d '{"url":"mailto:test@example.com"}' https://d.131213.xyz/create
+
 ```
 
 
@@ -75,6 +81,14 @@ curl -X POST -H "Content-Type: application/json" -d '{"url":"https://131213.xyz"
   "link": "http://d.131213.xyz/<slug>"
 }
 ```
+
+#### 访问控制
+
+如果在 Cloudflare Pages 的环境变量中设置了 `ACCESS_TOKEN`，则所有创建短链接的请求都需要提供正确的令牌：
+
+1. 在 Cloudflare Pages 项目设置中，添加环境变量 `ACCESS_TOKEN`，值为您的自定义令牌
+2. 在请求中包含 `token` 参数，其值应与 `ACCESS_TOKEN` 匹配
+3. 如果未设置 `ACCESS_TOKEN` 环境变量，则不需要令牌即可创建短链接
 
 
 
