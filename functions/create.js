@@ -22,7 +22,7 @@ export async function onRequest(context) {
             headers: {
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
                 'Access-Control-Max-Age': '86400', // 24小时
             },
         });
@@ -46,16 +46,27 @@ export async function onRequest(context) {
     };
     const timedata = new Date();
     const formattedDate = new Intl.DateTimeFormat('zh-CN', options).format(timedata);
-    const { url, slug } = await request.json();
+    const { url, slug, token } = await request.json();
     const corsHeaders = {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Max-Age': '86400', // 24 hours
     };
+
+    // Check ACCESS_TOKEN if set in environment
+    if (env.ACCESS_TOKEN) {
+        if (!token || token !== env.ACCESS_TOKEN) {
+            return Response.json({ message: 'Unauthorized: Invalid or missing access token.' }, {
+                headers: corsHeaders,
+                status: 401
+            });
+        }
+    }
+
     if (!url) return Response.json({ message: 'Missing required parameter: url.' });
 
-    // url格式检查
-    if (!/^https?:\/\/.{3,}/.test(url)) {
+    // url格式检查 - Allow all URIs, not just HTTP/HTTPS
+    if (!url || url.length < 3) {
         return Response.json({ message: 'Illegal format: url.' },{
             headers: corsHeaders,
             status: 400
@@ -108,13 +119,19 @@ export async function onRequest(context) {
             
             })
         }
-        const bodyUrl = new URL(url);
 
-        if (bodyUrl.hostname === originurl.hostname) {
-            return Response.json({ message: 'You cannot shorten a link to the same domain.' }, {
-                headers: corsHeaders,
-                status: 400
-            })
+        // Check if URL is same domain (only for http/https URLs)
+        try {
+            const bodyUrl = new URL(url);
+            if (bodyUrl.hostname === originurl.hostname) {
+                return Response.json({ message: 'You cannot shorten a link to the same domain.' }, {
+                    headers: corsHeaders,
+                    status: 400
+                })
+            }
+        } catch (e) {
+            // Not a valid URL object (e.g., non-http URIs like mailto:, tel:, etc.)
+            // This is fine, we allow all URIs
         }
 
         // 生成随机slug

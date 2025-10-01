@@ -105,6 +105,14 @@
         border-top: 1px solid var(--border-color);
       }
 
+      details div + div {
+        padding-top: 0;
+      }
+
+      details div input {
+        margin-bottom: 0.25rem;
+      }
+
       details small {
         margin: 0;
         font-size: .875rem;
@@ -213,6 +221,10 @@
           <input placeholder="slug" x-model="slug" />
           <small>Slug 默认是随机生成的短 id。</small>
         </div>
+        <div>
+          <input placeholder="access token (可选)" type="password" x-model="token" />
+          <small>如果服务器设置了访问令牌，请在此输入。</small>
+        </div>
       </details>
       <button :class="{ loading }" :disabled="loading || isValidated()" @click="submit($refs, $nextTick)">生成</button>
     </main>
@@ -224,10 +236,11 @@
       const app = {
         url: '',
         slug: '',
+        token: '',
         alert: null,
         loading: false,
         isValidated () {
-          return !/^https?:\/\/.{3,}/.test(this.url)
+          return !this.url || this.url.length < 3
         },
         submit ($refs, $nextTick) {
           if (!this.url) {
@@ -245,6 +258,7 @@
 
           const body = { url: this.url }
           if (this.slug) body.slug = this.slug
+          if (this.token) body.token = this.token
 
           fetch('/create', {
             method: 'post',
